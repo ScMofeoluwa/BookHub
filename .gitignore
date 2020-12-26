@@ -1,0 +1,5 @@
+.vscode
+Pipfile
+Pipfile.lock
+config.json
+__pycache__
