@@ -16,10 +16,12 @@ def find_page(title):
     for book in books:
         book = book.find_all("td")
         if book[8].text == "pdf" and book[6].text == "English":
+            title = book[2].text.split(",")[0]
             search_result.append(
                 {
                     "Link": book[10].a["href"],
                     "Size": book[7].text,
+                    "Title": " ".join(title.split(" ")[:-1]),
                 }
             )
 
@@ -34,7 +36,3 @@ def fetch_link(link):
     author = soup.find("br").find_next_sibling(text=True).strip()
 
     return link, author, title
-
-
-"""if __name__ == "__main__":
-    find_page("flask")"""

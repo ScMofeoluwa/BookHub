@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from datetime import datetime
 
@@ -23,14 +24,17 @@ from telegram.ext import (
 
 from libgen import fetch_link, find_page
 
-config = json.load(open("config.json"))
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    datefmt="%d-%b-%y %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
+
+config = json.load(open("config.json"))
 client = FaunaClient(secret=config["db"]["secret"])
 indexes = client.query(q.paginate(q.indexes()))
-
-
-updater = Updater(token=config["token"])
-dispatcher = updater.dispatcher
 
 
 def start(update, context):
@@ -150,7 +154,9 @@ def button(update, context):
 
         context.bot.send_message(
             chat_id=chat_id,
-            text=config["messages"]["search_result"].format(title, author, i["Size"]),
+            text=config["messages"]["search_result"].format(
+                i["Title"], author, i["Size"]
+            ),
             reply_markup=reply_markup,
         )
 
@@ -179,17 +185,31 @@ def contribute(update, context):
     )
 
 
-start_handler = CommandHandler("start", start)
-helper_handler = CommandHandler("help", helper)
-contribute_handler = CommandHandler("contribute", contribute)
-search_handler = CommandHandler("search", search)
-echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
-button_handler = CallbackQueryHandler(button)
-dispatcher.add_handler(start_handler)
-dispatcher.add_handler(helper_handler)
-dispatcher.add_handler(contribute_handler)
-dispatcher.add_handler(search_handler)
-dispatcher.add_handler(echo_handler)
-dispatcher.add_handler(button_handler)
+def error(update, context):
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-updater.start_polling()
+
+def main():
+    updater = Updater(token=config["token"], use_context=True)
+    dispatcher = updater.dispatcher
+
+    start_handler = CommandHandler("start", start)
+    helper_handler = CommandHandler("help", helper)
+    contribute_handler = CommandHandler("contribute", contribute)
+    search_handler = CommandHandler("search", search)
+    echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
+    button_handler = CallbackQueryHandler(button)
+    dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(helper_handler)
+    dispatcher.add_handler(contribute_handler)
+    dispatcher.add_handler(search_handler)
+    dispatcher.add_handler(echo_handler)
+    dispatcher.add_handler(button_handler)
+    dispatcher.add_error_handler(error)
+
+    updater.start_polling()
+    updater.idle()
+
+
+if __name__ == "__main__":
+    main()
