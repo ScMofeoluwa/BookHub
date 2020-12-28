@@ -32,7 +32,6 @@ def fetch_link(link):
     req = requests.get(link).text
     soup = BeautifulSoup(req, "lxml")
     link = soup.find("a")["href"]
-    title = soup.find(text=re.compile("^Title"))
     author = soup.find("br").find_next_sibling(text=True).strip()
 
-    return link, author, title
+    return link, author

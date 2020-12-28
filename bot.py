@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 import logging
 import re
@@ -141,13 +142,15 @@ def button(update, context):
     )
     title = query.data.split(":")[0]
     key = int(query.data.split(":")[1])
-    _, page = find_page(title)
-    page = page[key : key + 10]
-    for i in page:
-        link, author, title = fetch_link(i["Link"])
+    _, pages = find_page(title)
+    pages = pages[key : key + 10]
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = executor.map(fetch_link, [i["Link"] for i in pages])
+    for index, value in enumerate(results):
         button = [
             [
-                InlineKeyboardButton("Download", url=link),
+                InlineKeyboardButton("Download", url=value[0]),
             ]
         ]
         reply_markup = InlineKeyboardMarkup(button)
@@ -155,7 +158,7 @@ def button(update, context):
         context.bot.send_message(
             chat_id=chat_id,
             text=config["messages"]["search_result"].format(
-                i["Title"], author, i["Size"]
+                pages[index]["Title"], value[1], pages[index]["Size"]
             ),
             reply_markup=reply_markup,
         )
