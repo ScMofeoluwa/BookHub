@@ -33,5 +33,6 @@ def fetch_link(link):
     soup = BeautifulSoup(req, "lxml")
     link = soup.find("a")["href"]
     author = soup.find("br").find_next_sibling(text=True).strip()
+    img = "libgen.gs" + soup.find("img")["src"]
 
-    return link, author
+    return link, author, img

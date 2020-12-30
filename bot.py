@@ -3,6 +3,7 @@ import json
 import logging
 import re
 from datetime import datetime
+from time import sleep
 
 import pytz
 from faunadb import query as q
@@ -14,6 +15,7 @@ from telegram import (
     KeyboardButton,
     ReplyKeyboardMarkup,
 )
+from telegram.chataction import ChatAction
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
@@ -145,6 +147,8 @@ def button(update, context):
     _, pages = find_page(title)
     pages = pages[key : key + 10]
 
+    context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
+
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(fetch_link, [i["Link"] for i in pages])
     for index, value in enumerate(results):
@@ -155,9 +159,10 @@ def button(update, context):
         ]
         reply_markup = InlineKeyboardMarkup(button)
 
-        context.bot.send_message(
+        context.bot.send_photo(
             chat_id=chat_id,
-            text=config["messages"]["search_result"].format(
+            photo=value[2],
+            caption=config["messages"]["search_result"].format(
                 pages[index]["Title"], value[1], pages[index]["Size"]
             ),
             reply_markup=reply_markup,
